@@ -1,72 +1,51 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import { Description } from "./Description/Description";
-import { Options } from "./Options/Options";
-import { Feedback } from "./Feedback/Feedback";
-import { Notification } from "./Notification/Notification";
+import ContactForm from "./components/ContactForm/ContactForm";
+import ContactList from "./components/ContactList/ContactList";
+import SearchBox from "./components/SearchBox/SearchBox";
+
 
 export default function App() {
-  const [rate, setRate] = useState(() => {
-    const savedRate = window.localStorage.getItem("saved-rate");
+  const [contacts, setContacts] = useState(() => {
+    const savedContact = window.localStorage.getItem("saved-contact");
 
-    if (savedRate !== null) {
-      return JSON.parse(savedRate);
+    if (savedContact !== null) {
+      return JSON.parse(savedContact);
     }
 
-    return {
-      good: 0,
-      neutral: 0,
-      bad: 0,
-    };
+    return [];
   });
+  const [searchContact, setSearchContact] = useState("");
 
   useEffect(() => {
-    window.localStorage.setItem("saved-rate", JSON.stringify(rate));
-  });
-
-  const clearState = () =>
-    setRate({
-      good: 0,
-      neutral: 0,
-      bad: 0,
-    });
-
-  const updateFeedback = (feedbackType) => {
-    setRate((prevRate) => ({
-      ...prevRate,
-      [feedbackType]: prevRate[feedbackType] + 1,
-    }));
+    window.localStorage.setItem("saved-contact", JSON.stringify(contacts));
+  }, [contacts]);
+  const handleChange = (e) => {
+    setSearchContact(e.target.value);
   };
 
-  const totalFeedback = rate.good + rate.neutral + rate.bad;
+  const addContact = (newContact) => {
+    setContacts((prev) => {
+      return [...prev, newContact];
+    });
+  };
+
+  const deleteContact = (contactId) => {
+    setContacts((prev) => {
+      return prev.filter((contact) => contact.id !== contactId);
+    });
+  };
+
+  const contactToRender = contacts.filter((contact) =>
+    contact.name.toLowerCase().includes(searchContact.toLowerCase())
+  );
 
   return (
-    <>
-      <Description />
-      <Options variant="good" updateRate={updateFeedback}>
-        Good
-      </Options>
-      <Options variant="neutral" updateRate={updateFeedback}>
-        Neutral
-      </Options>
-      <Options variant="bad" updateRate={updateFeedback}>
-        Bad
-      </Options>
-      {totalFeedback > 0 && <Options updateRate={clearState}>Reset</Options>}
-      {totalFeedback > 0 ? (
-        <>
-          <Feedback>Good: {rate.good}</Feedback>
-          <Feedback>Neutral: {rate.neutral}</Feedback>
-          <Feedback>Bad: {rate.bad}</Feedback>
-          <Feedback>Total: {totalFeedback}</Feedback>
-          <Feedback>
-            Positive:{" "}
-            {Math.round(((rate.good + rate.neutral) / totalFeedback) * 100)}%
-          </Feedback>
-        </>
-      ) : (
-        <Notification />
-      )}
-    </>
+    <div>
+      <h1>Phonebook</h1>
+      <ContactForm onAdd={addContact} />
+      <SearchBox handleChange={handleChange} value={searchContact} />
+      <ContactList contacts={contactToRender} onDelete={deleteContact} />
+    </div>
   );
 }
